@@ -11,11 +11,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // ERROR HANDLER
-export const handleError = (error: unknown) => {
+export const handleError = (error:unknown) => {
   if (error instanceof Error) {
     // This is a native JavaScript error (e.g., TypeError, RangeError)
     console.error(error.message);
-    throw new Error(`Error: ${error.message}`);
+    //throw new Error(`Error: ${error.message}`);
   } else if (typeof error === "string") {
     // This is a string error message
     console.error(error);
@@ -85,26 +85,37 @@ export function removeKeysFromQuery({
 }
 
 // DEBOUNCE
-export const debounce = (func: (...args: any[]) => void, delay: number) => {
-  let timeoutId: NodeJS.Timeout | null;
-  return (...args: any[]) => {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(null, args), delay);
+export const debounce = <F extends (...args: Parameters<F>) => ReturnType<F>>(
+  func: F,
+  delay: number
+) => {
+  let timeoutId: NodeJS.Timeout | null = null;
+  
+  return (...args: Parameters<F>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => func(...args), delay);
   };
 };
 
 // GE IMAGE SIZE
 export type AspectRatioKey = keyof typeof aspectRatioOptions;
+
+type ImageWithAspectRatio = {
+  aspectRatio?: AspectRatioKey;
+  width?: number;
+  height?: number;
+};
+
 export const getImageSize = (
   type: string,
-  image: any,
+  image: ImageWithAspectRatio,
   dimension: "width" | "height"
 ): number => {
-  if (type === "fill") {
-    return (
-      aspectRatioOptions[image.aspectRatio as AspectRatioKey]?.[dimension] ||
-      1000
-    );
+  if (type === "fill" && image.aspectRatio) {
+    const aspectRatio = aspectRatioOptions[image.aspectRatio];
+    return aspectRatio?.[dimension] || 1000;
   }
   return image?.[dimension] || 1000;
 };
@@ -131,27 +142,33 @@ export const download = (url: string, filename: string) => {
 };
 
 // DEEP MERGE OBJECTS
-export const deepMergeObjects = (obj1: any, obj2: any) => {
-  if(obj2 === null || obj2 === undefined) {
+type DeepPartial<T> = T extends object ? {
+  [P in keyof T]?: DeepPartial<T[P]>;
+} : T;
+
+export const deepMergeObjects = <T extends object>(
+  obj1: T,
+  obj2: DeepPartial<T> | null | undefined
+): T => {
+  if (obj2 === null || obj2 === undefined) {
     return obj1;
   }
 
-  let output = { ...obj2 };
+  const output = { ...obj1 } as any;
 
-  for (let key in obj1) {
-    if (obj1.hasOwnProperty(key)) {
-      if (
-        obj1[key] &&
-        typeof obj1[key] === "object" &&
-        obj2[key] &&
-        typeof obj2[key] === "object"
-      ) {
-        output[key] = deepMergeObjects(obj1[key], obj2[key]);
+  for (const key in obj2) {
+    if (Object.prototype.hasOwnProperty.call(obj2, key)) {
+      const value = obj2[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        output[key] = deepMergeObjects(
+          output[key] || {},
+          value
+        );
       } else {
-        output[key] = obj1[key];
+        output[key] = value;
       }
     }
   }
 
-  return output;
+  return output as T;
 };

@@ -26,11 +26,15 @@ export async function getUserById(userId: string) {
 
     const user = await User.findOne({ clerkId: userId });
 
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      console.error(`User not found with clerkId: ${userId}`);
+      return null;
+    }
 
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
-    handleError(error);
+    console.error('Error in getUserById:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
   }
 }
 

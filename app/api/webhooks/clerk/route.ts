@@ -59,54 +59,110 @@ export async function POST(req: Request) {
 
   // CREATE
   if (eventType === "user.created") {
-    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
+    try {
+      console.log('Processing user.created event:', evt.data);
+      
+      const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
 
-    const user = {
-      clerkId: id,
-      email: email_addresses[0].email_address,
-      username: username!,
-      firstName: first_name,
-      lastName: last_name,
-      photo: image_url,
-    };
+      if (!email_addresses || email_addresses.length === 0) {
+        console.error('No email address found in user data');
+        return NextResponse.json(
+          { error: 'No email address provided' },
+          { status: 400 }
+        );
+      }
 
-    const newUser = await createUser(user);
+      const user = {
+        clerkId: id,
+        email: email_addresses[0].email_address,
+        username: username || `user_${Math.random().toString(36).substring(2, 10)}`,
+        firstName: first_name || '',
+        lastName: last_name || '',
+        photo: image_url || '',
+      };
 
-    // Set public metadata
-    if (newUser) {
-      await clerkClient.users.updateUserMetadata(id, {
-        publicMetadata: {
-          userId: newUser._id,
-        },
-      });
+      console.log('Creating user in database:', user);
+      const newUser = await createUser(user);
+      console.log('User created in database:', newUser);
+
+      // Set public metadata
+      if (newUser) {
+        try {
+          await clerkClient.users.updateUserMetadata(id, {
+            publicMetadata: {
+              userId: newUser._id,
+            },
+          });
+          console.log('Updated Clerk user metadata with MongoDB ID');
+        } catch (metadataError) {
+          console.error('Error updating Clerk user metadata:', metadataError);
+          // Don't fail the request if metadata update fails
+        }
+      }
+
+      return NextResponse.json({ message: "OK", user: newUser });
+    } catch (error) {
+      console.error('Error in user.created webhook handler:', error);
+      return NextResponse.json(
+        { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
     }
-
-    return NextResponse.json({ message: "OK", user: newUser });
   }
 
   // UPDATE
   if (eventType === "user.updated") {
-    const { id, image_url, first_name, last_name, username } = evt.data;
+    try {
+      console.log('Processing user.updated event:', evt.data);
+      
+      const { id, image_url, first_name, last_name, username } = evt.data;
 
-    const user = {
-      firstName: first_name,
-      lastName: last_name,
-      username: username!,
-      photo: image_url,
-    };
+      const userData = {
+        firstName: first_name || '',
+        lastName: last_name || '',
+        username: username || `user_${Math.random().toString(36).substring(2, 10)}`,
+        photo: image_url || '',
+      };
 
-    const updatedUser = await updateUser(id, user);
+      console.log('Updating user in database:', { id, user: userData });
+      const updatedUser = await updateUser(id, userData);
+      console.log('User updated in database:', updatedUser);
 
-    return NextResponse.json({ message: "OK", user: updatedUser });
+      return NextResponse.json({ message: "OK", user: updatedUser });
+    } catch (error) {
+      console.error('Error in user.updated webhook handler:', error);
+      return NextResponse.json(
+        { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
   }
 
   // DELETE
   if (eventType === "user.deleted") {
-    const { id } = evt.data;
+    try {
+      const { id } = evt.data;
+      console.log('Processing user.deleted event for user ID:', id);
+      
+      if (!id) {
+        console.error('No user ID provided for deletion');
+        return NextResponse.json(
+          { error: 'User ID is required for deletion' },
+          { status: 400 }
+        );
+      }
 
-    const deletedUser = await deleteUser(id!);
+      const deletedUser = await deleteUser(id);
+      console.log('User deleted from database:', deletedUser);
 
-    return NextResponse.json({ message: "OK", user: deletedUser });
+      return NextResponse.json({ message: "OK", user: deletedUser });
+    } catch (error) {
+      console.error('Error in user.deleted webhook handler:', error);
+      return NextResponse.json(
+        { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
   }
 
   console.log(`Webhook with and ID of ${id} and type of ${eventType}`);

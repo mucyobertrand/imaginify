@@ -53,13 +53,14 @@ export const Collection = ({
         {hasSearch && <Search />}
       </div>
 
-      {images.length > 0 ? (
-        <ul className="collection-list">
-          {images.map((image) => (
-            <Card image={image} key={image._id} />
-          ))}
-        </ul>
-      ) : (
+      {
+      //   <ul className="collection-list">
+      //     {images.map((image) => (
+      //       <Card image={image} key={image._id} />
+      //     ))}
+      //   </ul>
+      // ) : 
+      (
         <div className="collection-empty">
           <p className="p-20-semibold">Empty List</p>
         </div>
