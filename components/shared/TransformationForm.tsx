@@ -166,9 +166,11 @@ const TransformationForm = ({ action, data = null, userId, type, creditBalance, 
   const onTransformHandler = async () => {
     setIsTransforming(true)
 
-    setTransformationConfig(
-      deepMergeObjects(newTransformation, transformationConfig)
-    )
+    if (newTransformation) {
+      setTransformationConfig(
+        deepMergeObjects(transformationConfig || {}, newTransformation)
+      )
+    }
 
     setNewTransformation(null)
 
