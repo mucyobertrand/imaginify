@@ -20,11 +20,11 @@ const Sidebar = () => {
         <nav className="sidebar-nav">
           <SignedIn>
             <ul className="sidebar-nav_elements">
-              {navLinks.slice(0, 6).map((link, index) => {
+              {navLinks.slice(0, 6).map((link) => {
                 const isActive = link.route === pathname
 
                 return (
-                  <li key={index} className={`sidebar-nav_element group ${
+                  <li key={link.route} className={`sidebar-nav_element group ${
                     isActive ? 'bg-purple-gradient text-white' : 'text-gray-700'
                   }`}>
                     <Link className="sidebar-link" href={link.route}>
@@ -43,11 +43,11 @@ const Sidebar = () => {
               </ul>
 
             <ul className="sidebar-nav_elements">
-              {navLinks.slice(6).map((link, index) => {
+              {navLinks.slice(6).map((link) => {
                 const isActive = link.route === pathname
 
                 return (
-                  <li key={index} className={`sidebar-nav_element group ${
+                  <li key={link.route} className={`sidebar-nav_element group ${
                     isActive ? 'bg-purple-gradient text-white' : 'text-gray-700'
                   }`}>
                     <Link className="sidebar-link" href={link.route}>
